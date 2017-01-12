@@ -2,6 +2,7 @@ package com.example.ivandimitrov.contactsexploration;
 
 import android.app.Activity;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v4.app.LoaderManager;
@@ -16,10 +17,12 @@ import android.support.v4.widget.SimpleCursorAdapter;
 public class ContactsLoader implements LoaderManager.LoaderCallbacks<Cursor> {
     private SimpleCursorAdapter adapter;
     private Activity            activity;
+    private Uri                 uri;
 
-    public ContactsLoader(SimpleCursorAdapter adapter, Activity activity) {
+    public ContactsLoader(SimpleCursorAdapter adapter, Activity activity, Uri uri) {
         this.adapter = adapter;
         this.activity = activity;
+        this.uri = uri;
     }
 
     @Override
@@ -28,14 +31,27 @@ public class ContactsLoader implements LoaderManager.LoaderCallbacks<Cursor> {
         String[] projectionFields = new String[]{ContactsContract.Contacts._ID,
                 ContactsContract.Contacts.DISPLAY_NAME,
                 ContactsContract.Contacts.PHOTO_URI};
-        // Construct the loader
-        CursorLoader cursorLoader = new CursorLoader(activity,
-                ContactsContract.Contacts.CONTENT_URI, // URI
-                projectionFields, // projection fields
-                null, // the selection criteria
-                null, // the selection args
-                null // the sort order
-        );
+        CursorLoader cursorLoader;
+        if (uri == null) {
+            // Construct the loader
+            cursorLoader = new CursorLoader(activity,
+                    ContactsContract.Contacts.CONTENT_URI, // URI
+                    projectionFields, // projection fields
+                    null, // the selection criteria
+                    null, // the selection args
+                    null // the sort order
+            );
+        } else {
+            // Construct the loader
+            cursorLoader = new CursorLoader(activity,
+                    uri, // URI
+                    projectionFields, // projection fields
+                    null, // the selection criteria
+                    null, // the selection args
+                    null // the sort order
+            );
+        }
+
         // Return the loader for use
         return cursorLoader;
     }

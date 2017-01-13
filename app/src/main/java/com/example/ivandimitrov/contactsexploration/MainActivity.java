@@ -1,13 +1,18 @@
 package com.example.ivandimitrov.contactsexploration;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -19,18 +24,39 @@ import android.widget.ListView;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    public static final int CONTACT_LOADER_ID = 78;
+    public static final  int CONTACT_LOADER_ID                    = 78;
+    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1;
 
     private AdapterView.OnItemClickListener listener;
     private ContactsLoader                  mContactsLoader;
     private SimpleCursorAdapter             mAdapter;
     private Activity                        mActivity;
+    private boolean isRunning = false;
     // Defines the asynchronous callback for the contacts data loader
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (!checkForPermission()) {
+            Log.d("asd", "asd");
+            askPermission();
+        } else {
+            runActivity();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (isRunning) {
+            mContactsLoader.clearResources();
+        }
+    }
+
+    private void runActivity() {
+        isRunning = true;
         mActivity = this;
         setupCursorAdapter();
         mContactsLoader = new ContactsLoader(mAdapter, this, null);
@@ -43,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
                 ContactNode currentContact = new ContactNode();
                 Cursor cursor = ((SimpleCursorAdapter) parent.getAdapter()).getCursor();
                 cursor.moveToPosition(position);
+
 
                 int idx = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
                 String name = cursor.getString(idx);
@@ -66,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
         contacts.setAdapter(mAdapter);
         contacts.setOnItemClickListener(listener);
     }
-
 
     private ArrayList<String> getContactNumbers(String id) {
         ArrayList<String> list = new ArrayList<>();
@@ -120,11 +146,6 @@ public class MainActivity extends AppCompatActivity {
         return Uri.withAppendedPath(person, ContactsContract.Contacts.Photo.CONTENT_DIRECTORY);
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mContactsLoader.clearResources();
-    }
 
     private void setupCursorAdapter() {
         String[] uiBindFrom = {ContactsContract.Contacts.DISPLAY_NAME,
@@ -135,5 +156,32 @@ public class MainActivity extends AppCompatActivity {
                 this, R.layout.list_element,
                 null, uiBindFrom, uiBindTo,
                 0);
+    }
+
+    private void askPermission() {
+        Log.d("PERMISSION", "a");
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS},
+                MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+    }
+
+    private boolean checkForPermission() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_CONTACTS);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    runActivity();
+                }
+            }
+        }
     }
 }

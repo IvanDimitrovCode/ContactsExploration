@@ -2,6 +2,8 @@ package com.example.ivandimitrov.contactsexploration;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -12,6 +14,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
@@ -26,7 +29,9 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
     public static final  int CONTACT_LOADER_ID                    = 78;
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1;
+    private static final int NOTIFICATION_ID                      = 123456;
 
+    private NotificationCompat.Builder      mNotification;
     private AdapterView.OnItemClickListener listener;
     private ContactsLoader                  mContactsLoader;
     private SimpleCursorAdapter             mAdapter;
@@ -52,6 +57,18 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         if (isRunning) {
             mContactsLoader.clearResources();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    runActivity();
+                    sendNotification();
+                }
+            }
         }
     }
 
@@ -174,14 +191,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    runActivity();
-                }
-            }
-        }
+    private void sendNotification() {
+        mNotification = new NotificationCompat.Builder(this);
+        mNotification.setAutoCancel(true);
+
+        mNotification.setSmallIcon(R.drawable.ic_done_black_24dp);
+        mNotification.setTicker("Ticker");
+        mNotification.setWhen(System.currentTimeMillis());
+        mNotification.setContentTitle("Permission granted");
+        mNotification.setContentText("You have granted access to ContactsExplorer");
+
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        mNotification.setContentIntent(pendingIntent);
+
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        nm.notify(NOTIFICATION_ID, mNotification.build());
     }
+
 }

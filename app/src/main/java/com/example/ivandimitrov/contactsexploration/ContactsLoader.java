@@ -42,7 +42,6 @@ public class ContactsLoader implements LoaderManager.LoaderCallbacks<Cursor> {
                     null // the sort order
             );
         } else {
-            // Construct the loader
             cursorLoader = new CursorLoader(activity,
                     uri, // URI
                     projectionFields, // projection fields
